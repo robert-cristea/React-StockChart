@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Plot from 'react-plotly.js';
 
 export default function Stock() {
@@ -47,10 +47,13 @@ export default function Stock() {
     const [info, setInfo] = useState('');
     const [button_label, setButtonLabel] = useState('Compare');
     const [button_one_label, setButtonOneLabel] = useState('Display One');
+    const [button_interval_label, setButtonIntervalLabel] = useState('Weekly');
     const [button_disable, setButtonDisable] = useState(true);
     const [button_one_disable, setButtonOneDisable] = useState(true);
     const [startDate, setStartDate] = useState(getLastYear());
     const [endDate, setEndDate] = useState(getToday());
+    const [interval, setInterval] = useState('Monthly');
+    const [cond, setCond] = useState(0);
 
     let xValues = [];
     let yValues = [];
@@ -106,10 +109,29 @@ export default function Stock() {
         setButtonOneDisable(true);
     }
 
-    const handleSubmit = (interval) => {
+    const changeInterval = () => {
+        let updateInterval = interval === "Monthly" ? "Weekly" : "Monthly";
+        setButtonIntervalLabel(interval);
+        setInterval(updateInterval)
+    }
+
+    useEffect(() => {
+        if(cond === 1){
+            handleOneDisplay();
+        } else if(cond === 2){
+            handleSubmit();
+        }
+
+        return () => {
+            
+        };
+    }, [interval]);
+
+    const handleSubmit = () => {
         //changes the new stock symbol, prevents page from refreshing to default
         if ((value_A !== "default" && value_B !== "default" && value_C !== "default" && value_A !== value_B && value_B !== value_C && value_A !== value_C)) 
         {
+            setCond(2);
             setButtonLabel('Waiting ... ');
             setButtonOneLabel("Display One");
             fetchCompareStock(interval);
@@ -121,13 +143,9 @@ export default function Stock() {
         }
     }
 
-    const handleOneDisplay = (interval) => {
-        console.log("A "+value_A);
-        console.log("B "+value_B);
-        console.log("C "+value_C);
-
-        console.log('interval', interval)
+    const handleOneDisplay = () => {
         if((value_A !== "default" && value_B === "default" && value_C === "default") || (value_B !== "default" && value_C ==="default" && value_A === "default") || (value_C !== "default" && value_A ==="default" && value_B === "default")){
+            setCond(1);
             setButtonOneLabel("...Waiting")
             setButtonLabel("Compare")
             let value = 
@@ -152,8 +170,6 @@ export default function Stock() {
             let API_Call = `https://www.alphavantage.co/query?function=TIME_SERIES_${interval}&symbol=${value}&apikey=${API_KEY}&datatype=json`;
             let res = await fetch(API_Call);
             let data = await res.json();
-    
-            console.log(`Data of ${value_A}`,data);
             xValues = [];
             yValues = [];
             
@@ -192,7 +208,6 @@ export default function Stock() {
             let res = await fetch(API_Call);
             let data = await res.json();
     
-            console.log(`Data of ${value_A}`,data);
             xValues = [];
             yValues = [];
             
@@ -211,60 +226,52 @@ export default function Stock() {
             setStockChartXValues_A(A_xValues);
             setStockChartYValues_A(A_yValues);
 
-            if(value_A !== 'default' && value_B !== 'default'){
-                API_Call = `https://www.alphavantage.co/query?function=TIME_SERIES_${interval}&symbol=${value_B}&apikey=${API_KEY}&datatype=json`;
-                res = await fetch(API_Call);
-                data = await res.json();
+            API_Call = `https://www.alphavantage.co/query?function=TIME_SERIES_${interval}&symbol=${value_B}&apikey=${API_KEY}&datatype=json`;
+            res = await fetch(API_Call);
+            data = await res.json();
 
-                console.log(`Data of ${value_B}`,data);
-                xValues = [];
-                yValues = [];
-                
-                for (key in data[category]) {
-                    if(key && key >= startDate && key <= endDate)
-                    xValues.push(key);
-                    yValues.push(data[category][key]['1. open']);
-                }
-                
-                B_xValues = xValues.slice(0,Math.min(count, xValues.length));
-                B_yValues = yValues.slice(0,Math.min(count, yValues.length));
-
-                if(B_xValues === null || B_xValues.length === 0) setInfo(`${value_B} is empty.`);
-
-                setStockChartXValues_B(B_xValues);
-                setStockChartYValues_B(B_yValues);
-
-                API_Call = `https://www.alphavantage.co/query?function=TIME_SERIES_${interval}&symbol=${value_C}&apikey=${API_KEY}&datatype=json`;
-                res = await fetch(API_Call);
-                data = await res.json();
-
-                console.log(`Data of ${value_C}`,data);
-                xValues = [];
-                yValues = [];
-
-                for (key in data[category]) {
-                    if(key && key >= startDate && key <= endDate)
-                    xValues.push(key);
-                    yValues.push(data[category][key]['1. open']);
-                }
-
-                C_xValues = xValues.slice(0,Math.min(count, xValues.length));
-                C_yValues = yValues.slice(0,Math.min(count, yValues.length));
-
-                if(C_xValues === null || C_xValues.length === 0) setInfo(`${value_C} is empty.`);
-
-                setStockChartXValues_C(C_xValues);
-                setStockChartYValues_C(C_yValues);
-                
-                setButtonLabel('Compare');
-                setButtonDisable(true);
+            xValues = [];
+            yValues = [];
+            
+            for (key in data[category]) {
+                if(key && key >= startDate && key <= endDate)
+                xValues.push(key);
+                yValues.push(data[category][key]['1. open']);
             }
+            
+            B_xValues = xValues.slice(0,Math.min(count, xValues.length));
+            B_yValues = yValues.slice(0,Math.min(count, yValues.length));
+
+            if(B_xValues === null || B_xValues.length === 0) setInfo(`${value_B} is empty.`);
+
+            setStockChartXValues_B(B_xValues);
+            setStockChartYValues_B(B_yValues);
+
+            API_Call = `https://www.alphavantage.co/query?function=TIME_SERIES_${interval}&symbol=${value_C}&apikey=${API_KEY}&datatype=json`;
+            res = await fetch(API_Call);
+            data = await res.json();
+
+            xValues = [];
+            yValues = [];
+
+            for (key in data[category]) {
+                if(key && key >= startDate && key <= endDate)
+                xValues.push(key);
+                yValues.push(data[category][key]['1. open']);
+            }
+
+            C_xValues = xValues.slice(0,Math.min(count, xValues.length));
+            C_yValues = yValues.slice(0,Math.min(count, yValues.length));
+
+            if(C_xValues === null || C_xValues.length === 0) setInfo(`${value_C} is empty.`);
+
+            setStockChartXValues_C(C_xValues);
+            setStockChartYValues_C(C_yValues);
+            
+            setButtonLabel('Compare');
+            setButtonDisable(true);
             setButtonOneLabel('Display One');
             setButtonOneDisable(true);
-
-            console.log("h:A "+value_A);
-            console.log("h:B "+value_B);
-            console.log("h:C "+value_C);
         }catch(error){
             setError("Can't fetch data");
         }
@@ -287,6 +294,7 @@ export default function Stock() {
                 <input type='date' value={endDate} onChange={handleEndDate}/>
             </div>
             <div className="form-group">
+                <button onClick={changeInterval} className="form-control btn btn-whatever">{button_interval_label}</button>
                 <select value={value_A} onChange={handleChange_A}>
                     <option value="default" disabled hidden>
                         Select Stock
@@ -305,8 +313,8 @@ export default function Stock() {
                     </option>
                     {listItems}
                 </select>
-                <button onClick={() => handleSubmit('Weekly')} disabled={button_disable} className="form-control btn btn-whatever">{button_label}</button>
-                <button onClick={() => handleOneDisplay('Weekly')} disabled={button_one_disable} className="form-control btn btn-whatever">{button_one_label}</button>
+                <button onClick={handleSubmit} disabled={button_disable} className="form-control btn btn-whatever">{button_label}</button>
+                <button onClick={handleOneDisplay} disabled={button_one_disable} className="form-control btn btn-whatever">{button_one_label}</button>
                 <button onClick={clearState} className="form-control btn btn-whatever">Clear</button>
             </div>
             <h4>Stock Symbol: <span id="demo">{value_A} | {value_B} | {value_C}</span></h4>
