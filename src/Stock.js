@@ -36,13 +36,10 @@ export default function Stock() {
     const stockNames = ["IBM", "MSFT", "GOOGL", "AAPL"];
     const [value_A, setValue_A] = useState('default');
     const [value_B, setValue_B] = useState('default');
-    const [value_C, setValue_C] = useState('default');
     const [stockChartXValues_A, setStockChartXValues_A] = useState([]);
     const [stockChartYValues_A, setStockChartYValues_A] = useState([]);
     const [stockChartXValues_B, setStockChartXValues_B] = useState([]);
     const [stockChartYValues_B, setStockChartYValues_B] = useState([]);
-    const [stockChartXValues_C, setStockChartXValues_C] = useState([]);
-    const [stockChartYValues_C, setStockChartYValues_C] = useState([]);
     const [error, setError] = useState('');
     const [info, setInfo] = useState('');
     const [button_label, setButtonLabel] = useState('Compare');
@@ -71,12 +68,6 @@ export default function Stock() {
 
     }
     
-    const handleChange_C = (event) => {
-        setValue_C(event.target.value);
-        setButtonDisable(false);
-        setButtonOneDisable(false);
-    }
-    
     const handleStartDate = (event) => {
         setStartDate(event.target.value);
         setButtonDisable(false);
@@ -92,13 +83,10 @@ export default function Stock() {
     const clearState = () => {
         setValue_A("default");
         setValue_B("default");
-        setValue_C("default");
         setStockChartXValues_A([]);
         setStockChartYValues_A([]);
         setStockChartXValues_B([]);
         setStockChartYValues_B([]);
-        setStockChartXValues_C([]);
-        setStockChartYValues_C([]);
         setError('');
         setInfo('');
         setButtonLabel("Compare");
@@ -129,14 +117,14 @@ export default function Stock() {
 
     const handleSubmit = () => {
         //changes the new stock symbol, prevents page from refreshing to default
-        if ((value_A !== "default" && value_B !== "default" && value_C !== "default" && value_A !== value_B && value_B !== value_C && value_A !== value_C)) 
+        if (value_A !== "default" && value_B !== "default" && value_A !== value_B) 
         {
             setCond(2);
             setButtonLabel('Waiting ... ');
             setButtonOneLabel("Display One");
-            fetchCompareStock(interval);
+            fetchCompareStock();
             setError("");
-        } else if ((value_A !== 'default' && value_A === value_B) || (value_B !== 'default' && value_B === value_C) || (value_C !== 'default' && value_C === value_A)) {
+        } else if (value_A !== 'default' && value_A === value_B) {
             setError("Please select a differant Stock!");
         } else {
             setError("Please select Stock correctly!");
@@ -144,16 +132,12 @@ export default function Stock() {
     }
 
     const handleOneDisplay = () => {
-        if((value_A !== "default" && value_B === "default" && value_C === "default") || (value_B !== "default" && value_C ==="default" && value_A === "default") || (value_C !== "default" && value_A ==="default" && value_B === "default")){
+        if((value_A !== "default" && value_B === "default") || (value_B !== "default" && value_A === "default")){
             setCond(1);
             setButtonOneLabel("...Waiting")
             setButtonLabel("Compare")
-            let value = 
-                value_A === 'default' ? ( 
-                value_B === 'default'? 
-                (value_C === 'default'? "default":value_C):value_B):value_A;
-            
-            fetchOneStock(interval, value);
+            let value = value_A === 'default' ? value_B : value_A;
+            fetchOneStock(value);
             setError("");
         }else{
             setError("Only one symbol should be selected!");
@@ -161,13 +145,13 @@ export default function Stock() {
 
     }
 
-    const fetchOneStock = async (interval='Monthly', value) => {
+    const fetchOneStock = async (val) => {
         const API_KEY = '7VRR35QCQXZYP7C6'; 
         const category = `${interval} Time Series`;
         const count = interval === 'Weekly' ? 60 : 20;
         let A_xValues, A_yValues;
         try {
-            let API_Call = `https://www.alphavantage.co/query?function=TIME_SERIES_${interval}&symbol=${value}&apikey=${API_KEY}&datatype=json`;
+            let API_Call = `https://www.alphavantage.co/query?function=TIME_SERIES_${interval}&symbol=${val}&apikey=${API_KEY}&datatype=json`;
             let res = await fetch(API_Call);
             let data = await res.json();
             xValues = [];
@@ -196,7 +180,7 @@ export default function Stock() {
     }
 
     //API KEY .......... for ALphaVantage
-    const fetchCompareStock = async (interval='Weekly') => {
+    const fetchCompareStock = async () => {
         
         const API_KEY = '7VRR35QCQXZYP7C6'; 
         const category = `${interval} Time Series`;
@@ -247,27 +231,6 @@ export default function Stock() {
             setStockChartXValues_B(B_xValues);
             setStockChartYValues_B(B_yValues);
 
-            API_Call = `https://www.alphavantage.co/query?function=TIME_SERIES_${interval}&symbol=${value_C}&apikey=${API_KEY}&datatype=json`;
-            res = await fetch(API_Call);
-            data = await res.json();
-
-            xValues = [];
-            yValues = [];
-
-            for (key in data[category]) {
-                if(key && key >= startDate && key <= endDate)
-                xValues.push(key);
-                yValues.push(data[category][key]['1. open']);
-            }
-
-            C_xValues = xValues.slice(0,Math.min(count, xValues.length));
-            C_yValues = yValues.slice(0,Math.min(count, yValues.length));
-
-            if(C_xValues === null || C_xValues.length === 0) setInfo(`${value_C} is empty.`);
-
-            setStockChartXValues_C(C_xValues);
-            setStockChartYValues_C(C_yValues);
-            
             setButtonLabel('Compare');
             setButtonDisable(true);
             setButtonOneLabel('Display One');
@@ -294,7 +257,6 @@ export default function Stock() {
                 <input type='date' value={endDate} onChange={handleEndDate}/>
             </div>
             <div className="form-group">
-                <button onClick={changeInterval} className="form-control btn btn-whatever">{button_interval_label}</button>
                 <select value={value_A} onChange={handleChange_A}>
                     <option value="default" disabled hidden>
                         Select Stock
@@ -307,17 +269,12 @@ export default function Stock() {
                     </option>
                     {listItems}
                 </select>
-                <select value={value_C} onChange={handleChange_C}>
-                    <option value="default" disabled hidden>
-                        Select Stock
-                    </option>
-                    {listItems}
-                </select>
-                <button onClick={handleSubmit} disabled={button_disable} className="form-control btn btn-whatever">{button_label}</button>
+                <button onClick={changeInterval} className="form-control btn btn-whatever">{button_interval_label}</button>
+                <button onClick={handleSubmit} disabled={button_disable} className="form-control btn btn-whatever ml-5">{button_label}</button>
                 <button onClick={handleOneDisplay} disabled={button_one_disable} className="form-control btn btn-whatever">{button_one_label}</button>
                 <button onClick={clearState} className="form-control btn btn-whatever">Clear</button>
             </div>
-            <h4>Stock Symbol: <span id="demo">{value_A} | {value_B} | {value_C}</span></h4>
+            <h4>Stock Symbol: <span id="demo">{value_A} | {value_B}</span></h4>
             <h4 style={{color:'red'}}>{error}</h4>
             <h4 style={{color:'#343EA3'}}>{info}</h4>
             <Plot bsStyle="primary" 
@@ -344,21 +301,11 @@ export default function Stock() {
                         mode: 'lines+markers',
                         marker: { color: '#394df2', sizemin: 0 }
                     },
-                    {
-                        name : value_C,
-                        x: stockChartXValues_C,
-                        y: stockChartYValues_C,
-                        type: 'scatter',
-                        mode: 'lines+markers',
-                        marker: { color: '#992341', sizemin: 0 }
-                    }
                 ]}
                 config={{
                     scrollZoom:true,
                     // showLink:true
                 }}
-                // onRelayout={() => {
-                    // handleOneDisplay('Weekly')}}
                 
                 layout={{ width: 950, height: 500, title: 'STOCK CHART ', label:['DATE ','PRICE PER SHARE']}}
             />
