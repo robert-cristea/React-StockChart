@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import Plot from 'react-plotly.js';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 export default function Stock() {
     const nTime = new Date();
@@ -185,7 +186,7 @@ export default function Stock() {
         const API_KEY = '7VRR35QCQXZYP7C6'; 
         const category = `${interval} Time Series`;
         const count = interval === 'Weekly' ? 60 : 20;
-        let A_xValues, A_yValues, B_xValues, B_yValues, C_xValues, C_yValues;
+        let A_xValues, A_yValues, B_xValues, B_yValues;
         
         try {
             let API_Call = `https://www.alphavantage.co/query?function=TIME_SERIES_${interval}&symbol=${value_A}&apikey=${API_KEY}&datatype=json`;
@@ -247,34 +248,37 @@ export default function Stock() {
     return (
 
 
-        <div className="App" style={{backgroundColor:'#343EA3'}}>
-
-            <br />
-
+        <div className="App p-5">
             <h1>COMPARING STOCK PRICE</h1>
-            <div className="form-group">
-                <input type='date' value={startDate} onChange={handleStartDate} />
-                <input type='date' value={endDate} onChange={handleEndDate}/>
+            <div className="my-3 d-flex justify-content-center">
+                <div className="w-25 d-flex">
+                    <input type='date' className="form-control w-50" value={startDate} onChange={handleStartDate} />
+                    <input type='date' className="form-control w-50" value={endDate} onChange={handleEndDate}/>
+                </div>
             </div>
-            <div className="form-group">
-                <select value={value_A} onChange={handleChange_A}>
-                    <option value="default" disabled hidden>
-                        Select Stock
-                    </option>
-                    {listItems}
-                </select>
-                <select value={value_B} onChange={handleChange_B}>
-                    <option value="default" disabled hidden>
-                        Select Stock
-                    </option>
-                    {listItems}
-                </select>
-                <button onClick={changeInterval} className="form-control btn btn-whatever">{button_interval_label}</button>
-                <button onClick={handleSubmit} disabled={button_disable} className="form-control btn btn-whatever ml-5">{button_label}</button>
-                <button onClick={handleOneDisplay} disabled={button_one_disable} className="form-control btn btn-whatever">{button_one_label}</button>
-                <button onClick={clearState} className="form-control btn btn-whatever">Clear</button>
+            <div className="my-3 d-flex justify-content-center">
+                <div className="d-flex">
+                    <select className="form-control" value={value_A} onChange={handleChange_A}>
+                        <option value="default" disabled hidden>
+                            Select Stock
+                        </option>
+                        {listItems}
+                    </select>
+                    <select className="form-control" value={value_B} onChange={handleChange_B}>
+                        <option value="default" disabled hidden>
+                            Select Stock
+                        </option>
+                        {listItems}
+                    </select>
+                    <button onClick={changeInterval} className="btn btn-primary">{button_interval_label}</button>
+                </div>
+                <div className="d-flex">
+                    <button onClick={handleSubmit} disabled={button_disable} className="btn btn-primary ml-5">{button_label}</button>
+                    <button onClick={handleOneDisplay} disabled={button_one_disable} className="btn btn-primary">{button_one_label}</button>
+                    <button onClick={clearState} className="btn btn-danger">Clear</button>
+                </div>
             </div>
-            <h4>Stock Symbol: <span id="demo">{value_A} | {value_B}</span></h4>
+            <h4 className="my-5">Stock Symbol: <span id="demo">{value_A} | {value_B}</span></h4>
             <h4 style={{color:'red'}}>{error}</h4>
             <h4 style={{color:'#343EA3'}}>{info}</h4>
             <Plot bsStyle="primary" 
